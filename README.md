@@ -19,11 +19,41 @@ Nais API service account with access to the full team inventory and member email
 (after the first deployment if needed). Nais injects the rotating workload token;
 do not store it in configuration or secrets.
 
+## Webhooks
+
+The application manifest exposes
+`https://nais-teamsync.intern.nav.no/webhooks/nais` and imports the webhook Secret.
+
+Set `WEBHOOK_SOURCE=https://console.nav.cloud.nais.io/cloudevents` in Config
+`nais-github-teamsync`. Create Secret `nais-github-teamsync-webhook` with
+`WEBHOOK_SECRET`, containing the signing secret shared with Nais API.
+The source must match the sender's CloudEvents source exactly, not the receiver URL.
+
+A Nais API admin must register a **global subscription** (omit `teamSlug`) with
+URL `https://nais-teamsync.intern.nav.no/webhooks/nais`, the same signing secret,
+and these event types:
+
+```text
+TEAM_CREATED, TEAM_UPDATED, TEAM_CONFIRM_DELETE_KEY,
+TEAM_MEMBER_ADDED, TEAM_MEMBER_REMOVED, TEAM_MEMBER_SET_ROLE
+```
+
+Confirm that the API's delivery worker can reach the `.intern.nav.no` ingress.
+Expose only `/webhooks/nais`; keep health and metrics internal. The application
+does not register subscriptions automatically. Keep periodic polling enabled for
+missed deliveries and orphan cleanup.
+
+See the [upstream webhook guide](https://github.com/nais/github-teamsync/blob/main/docs/OPERATIONS.md#optional-webhooks)
+for registration and delivery details; confirm its experimental contract matches
+the deployed Nais API.
+
 ## Deploy
 
-Run **Deploy GitHub team sync** in GitHub Actions with a published upstream image
-reference, preferably pinned by digest. The workflow previews the manifest, then
-deploys and waits for readiness.
+Pushes to `main` deploy application configuration without an image override,
+retaining the currently deployed image. For the first deployment or an image
+upgrade, run **Deploy GitHub team sync** manually in GitHub Actions with a
+published upstream image reference, preferably pinned by digest. Both paths
+preview the manifest, then deploy and wait for readiness.
 
 Review dry-run logs and identity mappings before setting `DRY_RUN=false` in Nais
 Config: synchronization can remove memberships and delete managed teams.

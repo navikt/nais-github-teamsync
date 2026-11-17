@@ -1,6 +1,8 @@
 name: Deploy GitHub team sync
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
     inputs:
       image:
@@ -31,8 +33,18 @@ jobs:
       - name: Preview application
         env:
           IMAGE: ${{ inputs.image }}
-        run: nais apply .nais/app.yaml --set "spec.image=$IMAGE" --dry-run
+        run: |
+          args=()
+          if [[ -n "$IMAGE" ]]; then
+            args+=(--set "spec.image=$IMAGE")
+          fi
+          nais apply .nais/app.yaml "${args[@]}" --dry-run
       - name: Deploy application
         env:
           IMAGE: ${{ inputs.image }}
-        run: nais apply .nais/app.yaml --set "spec.image=$IMAGE" --wait
+        run: |
+          args=()
+          if [[ -n "$IMAGE" ]]; then
+            args+=(--set "spec.image=$IMAGE")
+          fi
+          nais apply .nais/app.yaml "${args[@]}" --wait

@@ -3,8 +3,10 @@ kind: Application
 metadata:
   name: nais-github-teamsync
 spec:
-  # The deployment workflow supplies the published github-teamsync image.
+  # Manual releases supply an image; configuration-only deploys retain it.
   port: 3105
+  ingresses:
+    - https://nais-teamsync.intern.nav.no/webhooks/nais
   replicas:
     min: 1
     max: 1
@@ -32,8 +34,10 @@ spec:
     # GITHUB_APP_PRIVATE_KEY_FILE=/run/secrets/github-app/private-key.pem
     # LISTEN_ADDRESS=0.0.0.0:3105
     # DRY_RUN=true
+    # WEBHOOK_SOURCE=https://console.nav.cloud.nais.io/cloudevents
     # Add identity-provider settings and optional tuning here as needed.
     - configmap: nais-github-teamsync
+    - secret: nais-github-teamsync-webhook
   filesFrom:
     # Create this NAIS Secret with a private-key.pem key.
     - secret: nais-github-teamsync-github-app
