@@ -1,0 +1,38 @@
+name: Deploy GitHub team sync
+
+on:
+  workflow_dispatch:
+    inputs:
+      image:
+        description: Published github-teamsync image reference (prefer a sha256 digest)
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nais-github-teamsync-prod-gcp
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: nais/setup@v1
+        with:
+          version: v8.3.0
+          team: nais
+          environment: prod-gcp
+      - name: Preview application
+        env:
+          IMAGE: ${{ inputs.image }}
+        run: nais apply .nais/app.yaml --set "spec.image=$IMAGE" --dry-run
+      - name: Deploy application
+        env:
+          IMAGE: ${{ inputs.image }}
+        run: nais apply .nais/app.yaml --set "spec.image=$IMAGE" --wait

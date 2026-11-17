@@ -1,0 +1,48 @@
+apiVersion: nais.io/v1alpha1
+kind: Application
+metadata:
+  name: nais-github-teamsync
+spec:
+  # The deployment workflow supplies the published github-teamsync image.
+  port: 3105
+  replicas:
+    min: 1
+    max: 1
+  strategy:
+    type: Recreate
+  terminationGracePeriodSeconds: 30
+  liveness:
+    path: /healthz
+  readiness:
+    path: /healthz
+  prometheus:
+    enabled: true
+    path: /metrics
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      memory: 512Mi
+  envFrom:
+    # Create this NAIS Config in team nais / prod-gcp with:
+    # NAIS_API_URL=https://console.nav.cloud.nais.io/graphql
+    # GITHUB_ORG=navikt
+    # GITHUB_APP_ID=<your-app-id>
+    # GITHUB_APP_PRIVATE_KEY_FILE=/run/secrets/github-app/private-key.pem
+    # LISTEN_ADDRESS=0.0.0.0:3105
+    # DRY_RUN=true
+    # Add identity-provider settings and optional tuning here as needed.
+    - configmap: nais-github-teamsync
+  filesFrom:
+    # Create this NAIS Secret with a private-key.pem key.
+    - secret: nais-github-teamsync-github-app
+      mountPath: /run/secrets/github-app
+      mode: 292 # 0444; readable by the image's non-root user.
+  # Bind the application to a NAIS API service account in Console.
+  # NAIS_SERVICE_ACCOUNT_TOKEN_PATH is injected by NAIS; do not configure it.
+  accessPolicy:
+    outbound:
+      external:
+        - host: api.github.com
+        - host: console.nav.cloud.nais.io
