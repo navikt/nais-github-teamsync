@@ -23,9 +23,9 @@ spec:
   resources:
     requests:
       cpu: 100m
-      memory: 128Mi
+      memory: 64Mi
     limits:
-      memory: 512Mi
+      memory: 128Mi
   envFrom:
     # Create this NAIS Config in team nais / prod-gcp with:
     # NAIS_API_URL=https://console.nav.cloud.nais.io/graphql
